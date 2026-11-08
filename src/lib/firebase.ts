@@ -2,14 +2,15 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
-// Your web app's Firebase configuration
+// Config comes from local environment variables (see .env.example).
+// Values are injected at build time and are NOT committed to the repo.
 const firebaseConfig = {
-  apiKey: "AIzaSyBHiZvTaRt7dUuFHi3CZNuY5d0Hzr18ZKU",
-  authDomain: "reithemedsi.firebaseapp.com",
-  projectId: "reithemedsi",
-  storageBucket: "reithemedsi.firebasestorage.app",
-  messagingSenderId: "541365378521",
-  appId: "1:541365378521:web:a485d9766dfa0bf0a70dc8",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase
