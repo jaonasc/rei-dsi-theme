@@ -1,87 +1,55 @@
-import {
-  collection,
-  doc,
-  getCountFromServer,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
-import { db } from "./firebase";
+const REPO = "jaonasc/rei-dsi-theme";
+const RELEASE_TAG = "v1";
+const ASSET_NAME = "rei-nerv-dsi-theme.zip";
+const CACHE_KEY = "gh_download_count";
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
-const IP_CACHE_KEY = "visitor_ip";
+type Cached = { count: number; at: number };
 
-async function fetchJson(url: string): Promise<{ ip?: string }> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`ip lookup failed: ${res.status}`);
-  return (await res.json()) as { ip?: string };
+function readCache(): number | null {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Cached;
+    if (Date.now() - parsed.at > CACHE_TTL_MS) return null;
+    return typeof parsed.count === "number" ? parsed.count : null;
+  } catch {
+    return null;
+  }
 }
 
-/**
- * Public IP of the visitor. Cached in sessionStorage so we call the
- * third-party API at most once per browser tab.
- */
-export async function getVisitorIp(): Promise<string | null> {
+function writeCache(count: number): void {
   try {
-    const cached = sessionStorage.getItem(IP_CACHE_KEY);
-    if (cached) return cached;
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ count, at: Date.now() }));
   } catch {
     /* storage blocked */
   }
-
-  const sources = [
-    "https://api64.ipify.org?format=json",
-    "https://api.ipify.org?format=json",
-  ];
-
-  for (const url of sources) {
-    try {
-      const data = await fetchJson(url);
-      const ip = typeof data.ip === "string" ? data.ip.trim() : "";
-      if (ip) {
-        try {
-          sessionStorage.setItem(IP_CACHE_KEY, ip);
-        } catch {
-          /* storage blocked */
-        }
-        return ip;
-      }
-    } catch {
-      /* try next source */
-    }
-  }
-
-  return null;
-}
-
-/** Firestore document IDs cannot contain "/". */
-function toDocId(ip: string): string {
-  return ip.replace(/\//g, "_");
 }
 
 /**
- * Records one download for this IP. The document ID is the IP itself, so a
- * second click from the same IP hits an existing document. Firestore rules
- * forbid updates, which makes the write fail with permission-denied — we
- * swallow that and treat it as "already counted".
+ * Real download count maintained by GitHub for the release asset.
+ * No visitor data is collected or stored. The value is cached for a few
+ * minutes to stay well inside GitHub's unauthenticated rate limit.
  */
-export async function registerDownload(): Promise<boolean> {
-  const ip = await getVisitorIp();
-  if (!ip) return false;
-
-  try {
-    await setDoc(doc(db, "download_ips", toDocId(ip)), {
-      ts: serverTimestamp(),
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** Total of unique IPs that clicked download. */
 export async function getDownloadCount(): Promise<number | null> {
+  const cached = readCache();
+  if (cached !== null) return cached;
+
   try {
-    const snapshot = await getCountFromServer(collection(db, "download_ips"));
-    return snapshot.data().count;
+    const res = await fetch(
+      `https://api.github.com/repos/${REPO}/releases/tags/${RELEASE_TAG}`,
+      { headers: { Accept: "application/vnd.github+json" } },
+    );
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as {
+      assets?: Array<{ name?: string; download_count?: number }>;
+    };
+    const asset = data.assets?.find((a) => a.name === ASSET_NAME);
+    if (typeof asset?.download_count !== "number") return null;
+
+    writeCache(asset.download_count);
+    return asset.download_count;
   } catch {
     return null;
   }

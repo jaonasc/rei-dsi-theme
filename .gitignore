@@ -16,10 +16,9 @@ dist-ssr
 .nitro
 *.local
 
-# Local environment (Firebase config) — never commit
+# Local environment — never commit
 .env
 .env.*
-!.env.example
 
 # Wrangler / Cloudflare
 .wrangler/

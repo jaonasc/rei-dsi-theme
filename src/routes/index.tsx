@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import top from "@/assets/rei_top.png";
 import bottom from "@/assets/rei_bottom.png";
-import { getDownloadCount, registerDownload } from "@/lib/download-counter";
+import { getDownloadCount } from "@/lib/download-counter";
 
 const DOWNLOAD_URL =
   "https://github.com/jaonasc/rei-dsi-theme/releases/download/v1/rei-nerv-dsi-theme.zip";
@@ -63,7 +63,7 @@ function Index() {
       .catch(() => setLang(navigator.language.startsWith("pt") ? "pt" : "en"));
   }, []);
 
-  // Load the real download counter (unique IPs).
+  // Load the real download counter (GitHub release asset downloads).
   useEffect(() => {
     let active = true;
     getDownloadCount().then((n) => {
@@ -81,12 +81,6 @@ function Index() {
     }, 250);
     return () => window.clearTimeout(id);
   }, []);
-
-  const handleDownload = () => {
-    registerDownload().then(() => {
-      getDownloadCount().then(setDownloads);
-    });
-  };
 
   const choose = (l: Lang) => { setLang(l); localStorage.setItem("lang", l); };
   const t = T[lang];
@@ -110,7 +104,7 @@ function Index() {
           <p className="font-mono text-[10px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em] text-accent-red">{t.tag}</p>
           <h1 className="font-display text-5xl sm:text-6xl md:text-8xl leading-[0.9]">REI<br /><span className="text-primary">AYANAMI</span></h1>
           <p className="text-muted-foreground max-w-md text-sm sm:text-base">{t.sub}</p>
-          <a ref={downloadRef} id="download" href={DOWNLOAD_URL} onClick={handleDownload}
+          <a ref={downloadRef} id="download" href={DOWNLOAD_URL}
             target="_blank" rel="noreferrer"
             className="scroll-mt-24 inline-flex w-full sm:w-auto justify-center items-center gap-3 bg-primary text-primary-foreground px-6 sm:px-8 py-4 rounded-sm font-display tracking-widest shadow-glow hover:-translate-y-0.5 transition">
             ↓ {t.dl}
