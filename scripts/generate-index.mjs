@@ -61,6 +61,7 @@ const html = `<!DOCTYPE html>
   <meta property="og:description" content="Free Evangelion Rei Ayanami theme for Nintendo DSi." />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.github.com https://ipapi.co;" />
   <link rel="icon" href="/rei.ico" type="image/x-icon" />
   <link rel="apple-touch-icon" href="/rei.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
