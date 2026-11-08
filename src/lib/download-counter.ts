@@ -1,14 +1,16 @@
 const REPO = "jaonasc/rei-dsi-theme";
 const RELEASE_TAG = "v1";
 const ASSET_NAME = "rei-nerv-dsi-theme.zip";
-const CACHE_KEY = "gh_download_count";
-const CACHE_TTL_MS = 60 * 1000; // 1 minuto — reflete downloads recentes sem estourar rate limit
+
+// Curto TTL: atualiza o número em até 1 minuto, sem saturar a API do GitHub
+// (limite sem autenticação: 60 req/hora).
+const CACHE_TTL_MS = 60 * 1000;
 
 type Cached = { count: number; at: number };
 
 function readCache(): number | null {
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY);
+    const raw = sessionStorage.getItem("gh_download_count");
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Cached;
     if (Date.now() - parsed.at > CACHE_TTL_MS) return null;
@@ -20,17 +22,19 @@ function readCache(): number | null {
 
 function writeCache(count: number): void {
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ count, at: Date.now() }));
+    sessionStorage.setItem(
+      "gh_download_count",
+      JSON.stringify({ count, at: Date.now() }),
+    );
   } catch {
     /* storage blocked */
   }
 }
 
 /**
- * Real download count maintained by GitHub for the release asset.
- * Uses cache-busting so we always fetch the freshest number, and a short
- * TTL so new downloads show up quickly without hitting GitHub's rate limit.
- * No visitor data (IP, etc.) is collected or stored.
+ * Real download count mantido pelo GitHub para o asset da release.
+ * Sempre tenta buscar o valor mais fresco (com cache-busting na URL).
+ * Não coleta IP nem dados do visitante.
  */
 export async function getDownloadCount(): Promise<number | null> {
   const cached = readCache();
@@ -41,7 +45,6 @@ export async function getDownloadCount(): Promise<number | null> {
     const res = await fetch(url, {
       headers: {
         Accept: "application/vnd.github+json",
-        // Cache-busting header so intermediate caches return fresh data
         "Cache-Control": "no-cache",
       },
     });
